@@ -38,7 +38,7 @@ Madhumati B S
 ### Add New Reservation
 
 ![Add New Reservation]
-(https://github.com/madhumatibs/hotel-managemesystem/blob/HotelApp/addNewReservation.png)
+(https://github.com/madhumatibs/hotel-management-system/blob/HotelApp/addNewReservation.png)
 
 ### All Reservations
 
