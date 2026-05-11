@@ -25,6 +25,7 @@ public class AddReservationServlet extends HttpServlet {
             r.setGuestName(req.getParameter("guestName").trim());
             r.setGuestEmail(req.getParameter("guestEmail").trim());
             r.setGuestPhone(req.getParameter("guestPhone").trim());
+            r.setGuestAddress(req.getParameter("guestAddress").trim());
             r.setRoomType(req.getParameter("roomType"));
             r.setRoomNumber(Integer.parseInt(req.getParameter("roomNumber")));
             r.setCheckInDate(Date.valueOf(req.getParameter("checkInDate")));

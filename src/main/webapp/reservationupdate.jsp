@@ -84,7 +84,7 @@
                     <div class="form-group">
                         <label for="status">Status *</label>
                         <select id="status" name="status" required>
-                            <option value="PENDING"   <%= "PENDING".equals(r.getStatus())   ? "selected" : "" %>>Pending</option>
+                            
                             <option value="CONFIRMED" <%= "CONFIRMED".equals(r.getStatus()) ? "selected" : "" %>>Confirmed</option>
                             <option value="CANCELLED" <%= "CANCELLED".equals(r.getStatus()) ? "selected" : "" %>>Cancelled</option>
                         </select>

@@ -19,7 +19,7 @@
         int resultCount     = (int) request.getAttribute("resultCount");
         double totalRevenue = (double) request.getAttribute("totalRevenue");
         long confirmedCount = (long) request.getAttribute("confirmedCount");
-        long pendingCount   = (long) request.getAttribute("pendingCount");
+        
         long cancelledCount = (long) request.getAttribute("cancelledCount");
     %>
 
@@ -52,10 +52,7 @@
                 <div class="summary-label">Confirmed</div>
                 <div class="summary-value"><%= confirmedCount %></div>
             </div>
-            <div class="summary-card pending">
-                <div class="summary-label">Pending</div>
-                <div class="summary-value"><%= pendingCount %></div>
-            </div>
+            
             <div class="summary-card cancelled">
                 <div class="summary-label">Cancelled</div>
                 <div class="summary-value"><%= cancelledCount %></div>

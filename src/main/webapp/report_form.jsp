@@ -35,7 +35,7 @@
                         <select id="status" name="status">
                             <option value="ALL">All Statuses</option>
                             <option value="CONFIRMED">Confirmed</option>
-                            <option value="PENDING">Pending</option>
+                           
                             <option value="CANCELLED">Cancelled</option>
                         </select>
                     </div>

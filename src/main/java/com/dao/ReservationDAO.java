@@ -1,6 +1,8 @@
 package com.dao;
 
 import com.model.Reservation;
+import java.util.Map;
+import java.util.LinkedHashMap;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -23,28 +25,91 @@ public class ReservationDAO {
 
     // ─── CREATE ─────────────────────────────────────────────────────────────
     public boolean addReservation(Reservation r) {
-        String sql = "INSERT INTO reservations (guest_name, guest_email, guest_phone, " +
+        // ✅ FIX 1: Added missing comma after guest_address
+        String sql = "INSERT INTO reservations (guest_name, guest_email, guest_phone, guest_address, " +
                      "room_type, room_number, check_in_date, check_out_date, " +
-                     "num_guests, total_price, status) VALUES (?,?,?,?,?,?,?,?,?,?)";
+                     "num_guests, total_price, status) VALUES (?,?,?,?,?,?,?,?,?,?,?)";
         try (Connection con = getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
 
-            ps.setString(1, r.getGuestName());
-            ps.setString(2, r.getGuestEmail());
-            ps.setString(3, r.getGuestPhone());
-            ps.setString(4, r.getRoomType());
-            ps.setInt   (5, r.getRoomNumber());
-            ps.setDate  (6, r.getCheckInDate());
-            ps.setDate  (7, r.getCheckOutDate());
-            ps.setInt   (8, r.getNumGuests());
-            ps.setDouble(9, r.getTotalPrice());
-            ps.setString(10, r.getStatus());
+            ps.setString(1,  r.getGuestName());
+            ps.setString(2,  r.getGuestEmail());
+            ps.setString(3,  r.getGuestPhone());
+            ps.setString(4,  r.getGuestAddress()); // ✅ FIX 2: index is 4, not 11
+            ps.setString(5,  r.getRoomType());
+            ps.setInt   (6,  r.getRoomNumber());
+            ps.setDate  (7,  r.getCheckInDate());
+            ps.setDate  (8,  r.getCheckOutDate());
+            ps.setInt   (9,  r.getNumGuests());
+            ps.setDouble(10, r.getTotalPrice());
+            ps.setString(11, r.getStatus());
             return ps.executeUpdate() > 0;
 
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
         }
+    }
+
+    // ─── REPORT: month-wise for a particular place ───────────────────────────
+    public List<Reservation> getReservationsByMonthAndPlace(String month, String year, String place) {
+        List<Reservation> list = new ArrayList<>();
+        String sql = "SELECT * FROM reservations WHERE 1=1" +
+                     (month != null && !month.isEmpty() ? " AND MONTH(check_in_date) = ?" : "") +
+                     (year  != null && !year.isEmpty()  ? " AND YEAR(check_in_date)  = ?" : "") +
+                     (place != null && !place.isEmpty() ? " AND LOWER(guest_address) LIKE ?" : "") +
+                     " ORDER BY check_in_date ASC";
+
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            int idx = 1;
+            if (month != null && !month.isEmpty()) ps.setInt   (idx++, Integer.parseInt(month));
+            if (year  != null && !year.isEmpty())  ps.setInt   (idx++, Integer.parseInt(year));
+            if (place != null && !place.isEmpty()) ps.setString(idx,   "%" + place.toLowerCase() + "%");
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) list.add(mapRow(rs));
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    // ─── REPORT: month-wise summary (count + revenue grouped by month) ───────
+    public List<Map<String, Object>> getMonthlysummary(String year, String place) {
+        List<Map<String, Object>> list = new ArrayList<>();
+        String sql = "SELECT MONTH(check_in_date) AS month, " +
+                     "COUNT(*) AS total_bookings, " +
+                     "SUM(total_price) AS total_revenue " +
+                     "FROM reservations WHERE 1=1" +
+                     (year  != null && !year.isEmpty()  ? " AND YEAR(check_in_date) = ?"     : "") +
+                     (place != null && !place.isEmpty() ? " AND LOWER(guest_address) LIKE ?" : "") +
+                     " GROUP BY MONTH(check_in_date) ORDER BY MONTH(check_in_date) ASC";
+
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            int idx = 1;
+            if (year  != null && !year.isEmpty())  ps.setInt   (idx++, Integer.parseInt(year));
+            if (place != null && !place.isEmpty()) ps.setString(idx,   "%" + place.toLowerCase() + "%");
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Map<String, Object> row = new LinkedHashMap<>();
+                    row.put("month",         rs.getInt("month"));
+                    row.put("totalBookings", rs.getInt("total_bookings"));
+                    row.put("totalRevenue",  rs.getDouble("total_revenue"));
+                    list.add(row);
+                }
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
     }
 
     // ─── READ ALL ───────────────────────────────────────────────────────────
@@ -81,7 +146,9 @@ public class ReservationDAO {
 
     // ─── UPDATE ─────────────────────────────────────────────────────────────
     public boolean updateReservation(Reservation r) {
-        String sql = "UPDATE reservations SET guest_name=?, guest_email=?, guest_phone=?, " +
+        // ✅ FIX 3: Added missing comma after guest_address=?
+        // ✅ FIX 4: Added ps.setString for guest_address and fixed all indexes
+        String sql = "UPDATE reservations SET guest_name=?, guest_email=?, guest_phone=?, guest_address=?, " +
                      "room_type=?, room_number=?, check_in_date=?, check_out_date=?, " +
                      "num_guests=?, total_price=?, status=? WHERE id=?";
         try (Connection con = getConnection();
@@ -90,14 +157,15 @@ public class ReservationDAO {
             ps.setString(1,  r.getGuestName());
             ps.setString(2,  r.getGuestEmail());
             ps.setString(3,  r.getGuestPhone());
-            ps.setString(4,  r.getRoomType());
-            ps.setInt   (5,  r.getRoomNumber());
-            ps.setDate  (6,  r.getCheckInDate());
-            ps.setDate  (7,  r.getCheckOutDate());
-            ps.setInt   (8,  r.getNumGuests());
-            ps.setDouble(9,  r.getTotalPrice());
-            ps.setString(10, r.getStatus());
-            ps.setInt   (11, r.getId());
+            ps.setString(4,  r.getGuestAddress()); // ✅ FIX 4: was missing entirely
+            ps.setString(5,  r.getRoomType());
+            ps.setInt   (6,  r.getRoomNumber());
+            ps.setDate  (7,  r.getCheckInDate());
+            ps.setDate  (8,  r.getCheckOutDate());
+            ps.setInt   (9,  r.getNumGuests());
+            ps.setDouble(10, r.getTotalPrice());
+            ps.setString(11, r.getStatus());
+            ps.setInt   (12, r.getId());
             return ps.executeUpdate() > 0;
 
         } catch (SQLException e) {
@@ -184,6 +252,7 @@ public class ReservationDAO {
         r.setGuestName   (rs.getString("guest_name"));
         r.setGuestEmail  (rs.getString("guest_email"));
         r.setGuestPhone  (rs.getString("guest_phone"));
+        r.setGuestAddress(rs.getString("guest_address")); // ✅ ADDED
         r.setRoomType    (rs.getString("room_type"));
         r.setRoomNumber  (rs.getInt("room_number"));
         r.setCheckInDate (rs.getDate("check_in_date"));

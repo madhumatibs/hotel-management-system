@@ -75,7 +75,7 @@
                     <div class="form-group">
                         <label for="status">Status *</label>
                         <select id="status" name="status" required>
-                            <option value="PENDING">Pending</option>
+                           
                             <option value="CONFIRMED">Confirmed</option>
                             <option value="CANCELLED">Cancelled</option>
                         </select>
